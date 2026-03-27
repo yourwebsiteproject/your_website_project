@@ -1,0 +1,9 @@
+node_modules/
+video/recordings/
+video/output/
+video/remotion/public/*.mp4
+video/remotion/public/*.mov
+.env
+.env.local
+*.log
+/tmp/obs_current_day

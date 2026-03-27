@@ -1,0 +1,86 @@
+/* ============================================
+   your_website_project — brand system
+   Brand colors: #0f0f0f  #00ff88  #ff3c78
+   ============================================ */
+
+:root {
+  --bg: #0f0f0f;
+  --green: #00ff88;
+  --pink: #ff3c78;
+  --text: #f0f0f0;
+  --font: 'Courier New', Courier, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---------- Day badge ---------- */
+#day-badge {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: var(--green);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  z-index: 100;
+  letter-spacing: 0.1em;
+  box-shadow: 0 0 16px rgba(0,255,136,0.4);
+}
+
+/* ---------- Cursor trail canvas ---------- */
+#trail-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* ---------- Hero ---------- */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+#hero-title {
+  font-size: clamp(2rem, 8vw, 5rem);
+  font-weight: bold;
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(0,255,136,0.3);
+  animation: glitch 4s infinite;
+}
+
+/* ---------- Glitch animation ---------- */
+@keyframes glitch {
+  0%, 90%, 100% { text-shadow: 0 0 40px rgba(0,255,136,0.3); transform: none; }
+  91% { text-shadow: 3px 0 var(--pink), -3px 0 var(--green); transform: skewX(-1deg); }
+  93% { text-shadow: -3px 0 var(--pink), 3px 0 var(--green); transform: skewX(1deg); }
+  95% { text-shadow: 0 0 40px rgba(0,255,136,0.3); transform: none; }
+}
+
+/* ---------- Confetti canvas ---------- */
+#confetti-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 9998;
+}

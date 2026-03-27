@@ -1,0 +1,91 @@
+# ============================================================
+#  daily-publish.yml — GitHub Actions workflow
+#
+#  Triggered automatically at 9:00 AM UTC daily,
+#  OR manually via workflow_dispatch (with day number input).
+#
+#  What it does:
+#    1. Checks that a rendered video exists for the day
+#    2. Runs publish.ts → uploads to YouTube, TikTok, Instagram
+#
+#  Required GitHub Secrets:
+#    YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN
+#    TIKTOK_ACCESS_TOKEN
+#    INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_ACCOUNT_ID
+#    INSTAGRAM_VIDEO_URL  (CDN URL of the rendered video)
+#    WEBSITE_URL
+# ============================================================
+
+name: Daily Publish
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 9:00 AM UTC every day
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Day number to publish (e.g. 1)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: automation/package.json
+
+      - name: Install automation dependencies
+        run: npm ci
+        working-directory: automation
+
+      - name: Determine day number
+        id: day
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "day=${{ github.event.inputs.day }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-detect: count how many days have been published
+            PUBLISHED=$(ls content/days/day*.json 2>/dev/null | \
+              xargs -I{} sh -c 'cat {} | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[\"day\"]) if d.get(\"publishedAt\") else None"' \
+              | grep -c . || echo 0)
+            echo "day=$((PUBLISHED + 1))" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check video exists
+        run: |
+          DAY_PAD=$(printf "%03d" "${{ steps.day.outputs.day }}")
+          if [ ! -f "video/output/day${DAY_PAD}.mp4" ]; then
+            echo "❌ video/output/day${DAY_PAD}.mp4 not found."
+            echo "   Render locally first: ts-node automation/render.ts ${{ steps.day.outputs.day }}"
+            exit 1
+          fi
+
+      - name: Publish to all platforms
+        env:
+          YOUTUBE_CLIENT_ID:        ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET:    ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN:    ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          TIKTOK_ACCESS_TOKEN:      ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          INSTAGRAM_ACCESS_TOKEN:   ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID:     ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          INSTAGRAM_VIDEO_URL:      ${{ secrets.INSTAGRAM_VIDEO_URL }}
+          WEBSITE_URL:              ${{ secrets.WEBSITE_URL }}
+        run: npx ts-node automation/publish.ts ${{ steps.day.outputs.day }}
+
+      - name: Commit updated day file (mark publishedAt)
+        run: |
+          DAY_PAD=$(printf "%03d" "${{ steps.day.outputs.day }}")
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "content/days/day${DAY_PAD}.json"
+          git diff --staged --quiet || git commit -m "chore: mark day ${{ steps.day.outputs.day }} published"
+          git push

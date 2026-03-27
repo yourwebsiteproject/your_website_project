@@ -1,0 +1,16 @@
+{
+  "name": "your_website_project-automation",
+  "version": "1.0.0",
+  "description": "Publish + pick-winner scripts",
+  "scripts": {
+    "pick-winner": "ts-node pick-winner.ts",
+    "render":      "ts-node render.ts",
+    "publish":     "ts-node publish.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.0.0"
+  }
+}
